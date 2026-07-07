@@ -1,4 +1,4 @@
-import { brawlers, worlds, shopItems, lossTips } from './data.js';
+import { brawlers, worlds, shopItems, lossTips, brawlerSVG } from './data.js';
 
 let onBrawlerSelect, onWorldSelect, onStartBattle;
 let onAnswerClick, onBack, onNext, onRetry, onLobby;
@@ -37,7 +37,7 @@ function populateBrawlers() {
     btn.className = 'brawler-btn';
     btn.dataset.id = b.id;
     btn.innerHTML = `
-      <span class="brawler-emoji">${b.emoji}</span>
+      <span class="brawler-icon">${brawlerSVG(b.svgId, 48)}</span>
       <span class="brawler-name">${b.name}</span>
       <span class="brawler-hp">❤️ ${b.hp} | ⚔️ ${b.damage}</span>
     `;
@@ -97,7 +97,7 @@ export function updateBrawlerSelection(index) {
   const b = brawlers[index];
   const info = document.getElementById('selected-brawler-info');
   info.innerHTML = `
-    ${b.emoji} <strong>${b.name}</strong> — ❤️ ${b.hp} | ⚔️ ${b.damage} | 💥 ${b.superName} (${Math.abs(b.superDamage * 100)}%)
+    ${brawlerSVG(b.svgId, 32)} <strong>${b.name}</strong> — ❤️ ${b.hp} | ⚔️ ${b.damage} | 💥 ${b.superName} (${Math.abs(b.superDamage * 100)}%)
     <br><small>${b.desc}</small>
   `;
   document.getElementById('btn-start').disabled = false;
@@ -118,7 +118,7 @@ export function updateHUD(levelIndex) {
     level.textContent = world.levels[levelIndex].name;
   }
   const enemy = world.levels[levelIndex].enemy;
-  waveEl.textContent = `🎯 ${enemy.name}`;
+  waveEl.innerHTML = `${brawlerSVG(enemy.svgId, 24)} ${enemy.name}`;
 }
 
 export function updateHealthBars(playerHp, playerMaxHp, enemyHp, enemyMaxHp, playerName, enemyName) {
@@ -216,18 +216,12 @@ export function showResults(won, trophies, accuracy, damage, tip) {
   if (won) {
     icon.textContent = '🏆';
     title.textContent = '🎉 ניצחון!';
-    title.style.background = 'linear-gradient(135deg, #10B981, #06B6D4)';
-    title.style.webkitBackgroundClip = 'text';
-    title.style.webkitTextFillColor = 'transparent';
-    title.style.backgroundClip = 'text';
+    title.className = 'results-title win';
     nextBtn.style.display = 'block';
   } else {
     icon.textContent = '💔';
     title.textContent = 'הפסדת...';
-    title.style.background = 'linear-gradient(135deg, #EF4444, #F59E0B)';
-    title.style.webkitBackgroundClip = 'text';
-    title.style.webkitTextFillColor = 'transparent';
-    title.style.backgroundClip = 'text';
+    title.className = 'results-title lose';
     nextBtn.style.display = 'none';
   }
 

@@ -1,47 +1,60 @@
+export function brawlerSVG(id, size = 60) {
+  const svgs = {
+    shelly: `<svg width="${size}" height="${size}" viewBox="0 0 60 60"><rect x="8" y="8" width="44" height="44" rx="2" fill="#4CAF50" stroke="#000" stroke-width="3"/><rect x="14" y="14" width="32" height="10" rx="2" fill="#2E7D32" stroke="#000" stroke-width="2"/><rect x="12" y="28" width="36" height="20" rx="2" fill="#81C784" stroke="#000" stroke-width="2"/><rect x="20" y="32" width="8" height="6" fill="#000"/><rect x="32" y="32" width="8" height="6" fill="#000"/><rect x="24" y="42" width="12" height="3" fill="#000"/></svg>`,
+    colt: `<svg width="${size}" height="${size}" viewBox="0 0 60 60"><rect x="8" y="8" width="44" height="44" rx="2" fill="#1565C0" stroke="#000" stroke-width="3"/><rect x="14" y="12" width="32" height="14" rx="2" fill="#1976D2" stroke="#000" stroke-width="2"/><rect x="12" y="30" width="36" height="18" rx="2" fill="#42A5F5" stroke="#000" stroke-width="2"/><rect x="18" y="34" width="8" height="6" fill="#000"/><rect x="34" y="34" width="8" height="6" fill="#000"/><rect x="10" y="26" width="40" height="3" fill="#0D47A1"/></svg>`,
+    bull: `<svg width="${size}" height="${size}" viewBox="0 0 60 60"><rect x="8" y="8" width="44" height="44" rx="2" fill="#E65100" stroke="#000" stroke-width="3"/><rect x="14" y="12" width="32" height="12" rx="2" fill="#EF6C00" stroke="#000" stroke-width="2"/><rect x="10" y="28" width="40" height="20" rx="2" fill="#FF9800" stroke="#000" stroke-width="2"/><rect x="18" y="32" width="8" height="6" fill="#000"/><rect x="34" y="32" width="8" height="6" fill="#000"/><rect x="22" y="42" width="16" height="4" fill="#000"/></svg>`,
+    brock: `<svg width="${size}" height="${size}" viewBox="0 0 60 60"><rect x="8" y="8" width="44" height="44" rx="2" fill="#7B1FA2" stroke="#000" stroke-width="3"/><rect x="14" y="12" width="32" height="12" rx="2" fill="#8E24AA" stroke="#000" stroke-width="2"/><rect x="12" y="28" width="36" height="20" rx="2" fill="#CE93D8" stroke="#000" stroke-width="2"/><rect x="18" y="32" width="8" height="6" fill="#000"/><rect x="34" y="32" width="8" height="6" fill="#000"/><rect x="12" y="44" width="36" height="3" fill="#4A148C"/></svg>`,
+    nita: `<svg width="${size}" height="${size}" viewBox="0 0 60 60"><rect x="8" y="8" width="44" height="44" rx="2" fill="#C62828" stroke="#000" stroke-width="3"/><rect x="14" y="12" width="32" height="14" rx="2" fill="#D32F2F" stroke="#000" stroke-width="2"/><rect x="12" y="30" width="36" height="18" rx="2" fill="#EF5350" stroke="#000" stroke-width="2"/><rect x="18" y="34" width="6" height="6" fill="#000"/><rect x="36" y="34" width="6" height="6" fill="#000"/><rect x="24" y="42" width="12" height="3" fill="#000"/></svg>`,
+    poco: `<svg width="${size}" height="${size}" viewBox="0 0 60 60"><rect x="8" y="8" width="44" height="44" rx="2" fill="#00695C" stroke="#000" stroke-width="3"/><rect x="14" y="12" width="32" height="12" rx="2" fill="#00897B" stroke="#000" stroke-width="2"/><rect x="12" y="28" width="36" height="20" rx="2" fill="#26A69A" stroke="#000" stroke-width="2"/><circle cx="21" cy="36" r="4" fill="#000"/><circle cx="39" cy="36" r="4" fill="#000"/><rect x="24" y="44" width="12" height="3" fill="#000"/></svg>`,
+    primo: `<svg width="${size}" height="${size}" viewBox="0 0 60 60"><rect x="8" y="8" width="44" height="44" rx="2" fill="#B71C1C" stroke="#000" stroke-width="3"/><rect x="14" y="12" width="32" height="12" rx="2" fill="#C62828" stroke="#000" stroke-width="2"/><rect x="10" y="28" width="40" height="20" rx="2" fill="#E53935" stroke="#000" stroke-width="2"/><rect x="16" y="32" width="10" height="8" fill="#000"/><rect x="34" y="32" width="10" height="8" fill="#000"/><rect x="20" y="44" width="20" height="3" fill="#000"/></svg>`
+  };
+  return svgs[id] || svgs.shelly;
+}
+
 export const brawlers = [
   {
-    id: 'centurion',
-    name: 'Centurion',
-    emoji: '🛡️',
-    color: '#8B5CF6',
-    hp: 5000,
-    damage: 250,
+    id: 'shelly',
+    name: 'Shelly',
+    svgId: 'shelly',
+    color: '#4CAF50',
+    hp: 4800,
+    damage: 220,
     superDamage: 0.25,
-    superName: 'מכת מגן',
-    desc: 'טנק עם מכת מגן קטלנית'
+    superName: 'מכת צדף',
+    desc: 'ברולרית התחלה עם רובה ציד חזק'
   },
   {
-    id: 'violet',
-    name: 'Violet',
-    emoji: '💜',
-    color: '#EC4899',
-    hp: 3500,
-    damage: 180,
-    superDamage: -0.30,
-    superName: 'ריפוי אחוזים',
-    desc: 'מרפאה עם בוסט של 30%'
+    id: 'colt',
+    name: 'Colt',
+    svgId: 'colt',
+    color: '#1565C0',
+    hp: 3600,
+    damage: 280,
+    superDamage: 0.30,
+    superName: 'סופת כדורים',
+    desc: 'יורה מהיר עם שני אקדחים'
   },
   {
-    id: 'spark',
-    name: 'Spark',
-    emoji: '⚡',
-    color: '#F59E0B',
-    hp: 3200,
-    damage: 200,
-    superDamage: 0.15,
-    superName: 'מכת ברק כפולה',
-    desc: 'תקיפת קומבו מהירה'
-  },
-  {
-    id: 'titan',
-    name: 'Titan',
-    emoji: '💥',
-    color: '#6366F1',
+    id: 'bull',
+    name: 'Bull',
+    svgId: 'bull',
+    color: '#E65100',
     hp: 6000,
-    damage: 300,
-    superDamage: 0.40,
-    superName: 'ריסוק ענק',
-    desc: 'מחסל בוסים, 40% נזק לאויבים חלשים'
+    damage: 200,
+    superDamage: -0.25,
+    superName: 'ריפוי מהיר',
+    desc: 'טנק כבד עם רובה ציד לטווח קרוב'
+  },
+  {
+    id: 'brock',
+    name: 'Brock',
+    svgId: 'brock',
+    color: '#7B1FA2',
+    hp: 3200,
+    damage: 260,
+    superDamage: 0.35,
+    superName: 'מטר טילים',
+    desc: 'צלף עם רקטות ארוכות טווח'
   }
 ];
 
@@ -51,21 +64,12 @@ export const worlds = [
     name: 'יער השברים',
     emoji: '🌲',
     topic: 'המרת שברים לאחוזים',
-    color: '#10B981',
+    color: '#4CAF50',
     unlocked: true,
     levels: [
-      {
-        name: 'שלב 1 - שברים פשוטים',
-        enemy: { name: 'שומר היער', emoji: '🌿', hp: 1500, color: '#065F46' }
-      },
-      {
-        name: 'שלב 2 - עשרונים',
-        enemy: { name: 'זאב העשרונים', emoji: '🐺', hp: 2000, color: '#047857' }
-      },
-      {
-        name: 'שלב 3 - אתגר בוס',
-        enemy: { name: 'מכנה ענק', emoji: '👹', hp: 3000, color: '#022C22' }
-      }
+      { name: 'שלב 1 - שברים פשוטים', enemy: { id: 'nita', name: 'Nita', svgId: 'nita', hp: 1500, color: '#C62828' } },
+      { name: 'שלב 2 - עשרונים', enemy: { id: 'poco', name: 'Poco', svgId: 'poco', hp: 2000, color: '#00695C' } },
+      { name: 'שלב 3 - אתגר בוס', enemy: { id: 'bull', name: 'Bull', svgId: 'bull', hp: 3000, color: '#E65100' } }
     ]
   },
   {
@@ -73,21 +77,12 @@ export const worlds = [
     name: 'עמק הערך',
     emoji: '🏞️',
     topic: 'מציאת ערך האחוז',
-    color: '#06B6D4',
+    color: '#1565C0',
     unlocked: true,
     levels: [
-      {
-        name: 'שלב 1 - אחוזים פשוטים',
-        enemy: { name: 'שומר העמק', emoji: '🪨', hp: 1800, color: '#0E7490' }
-      },
-      {
-        name: 'שלב 2 - בינוניים',
-        enemy: { name: 'צייד האחוזים', emoji: '🏹', hp: 2200, color: '#155E75' }
-      },
-      {
-        name: 'שלב 3 - בוס העמק',
-        enemy: { name: 'מלך האחוזים', emoji: '👑', hp: 3500, color: '#164E63' }
-      }
+      { name: 'שלב 1 - אחוזים פשוטים', enemy: { id: 'poco', name: 'Poco', svgId: 'poco', hp: 1800, color: '#00695C' } },
+      { name: 'שלב 2 - בינוניים', enemy: { id: 'shelly', name: 'Shelly', svgId: 'shelly', hp: 2200, color: '#4CAF50' } },
+      { name: 'שלב 3 - בוס העמק', enemy: { id: 'colt', name: 'Colt', svgId: 'colt', hp: 3500, color: '#1565C0' } }
     ]
   },
   {
@@ -95,21 +90,12 @@ export const worlds = [
     name: 'עיר ההנחות',
     emoji: '🏙️',
     topic: 'הנחות והתייקרויות',
-    color: '#F59E0B',
+    color: '#E65100',
     unlocked: true,
     levels: [
-      {
-        name: 'שלב 1 - הנחות פשוטות',
-        enemy: { name: 'סוכן המבצעים', emoji: '🕴️', hp: 2000, color: '#92400E' }
-      },
-      {
-        name: 'שלב 2 - התייקרויות',
-        enemy: { name: 'אינפלטור', emoji: '📈', hp: 2500, color: '#B45309' }
-      },
-      {
-        name: 'שלב 3 - בוס הקניון',
-        enemy: { name: 'טייקון הקניות', emoji: '🛍️', hp: 4000, color: '#78350F' }
-      }
+      { name: 'שלב 1 - הנחות פשוטות', enemy: { id: 'primo', name: 'El Primo', svgId: 'primo', hp: 2000, color: '#B71C1C' } },
+      { name: 'שלב 2 - התייקרויות', enemy: { id: 'brock', name: 'Brock', svgId: 'brock', hp: 2500, color: '#7B1FA2' } },
+      { name: 'שלב 3 - בוס הקניון', enemy: { id: 'colt', name: 'Colt', svgId: 'colt', hp: 4000, color: '#1565C0' } }
     ]
   },
   {
@@ -117,21 +103,12 @@ export const worlds = [
     name: 'הר הבוס',
     emoji: '🏔️',
     topic: 'מציאת השלם (100%)',
-    color: '#EF4444',
+    color: '#C62828',
     unlocked: true,
     levels: [
-      {
-        name: 'שלב 1 - בסיסי',
-        enemy: { name: 'שומר ההר', emoji: '🗿', hp: 2800, color: '#7F1D1D' }
-      },
-      {
-        name: 'שלב 2 - מתקדם',
-        enemy: { name: 'צוק המבחן', emoji: '⛰️', hp: 3200, color: '#991B1B' }
-      },
-      {
-        name: 'שלב 3 - בוס העל',
-        enemy: { name: 'אחוזון האימה', emoji: '🐉', hp: 5000, color: '#450A0A' }
-      }
+      { name: 'שלב 1 - בסיסי', enemy: { id: 'nita', name: 'Nita', svgId: 'nita', hp: 2800, color: '#C62828' } },
+      { name: 'שלב 2 - מתקדם', enemy: { id: 'bull', name: 'Bull', svgId: 'bull', hp: 3200, color: '#E65100' } },
+      { name: 'שלב 3 - בוס העל', enemy: { id: 'primo', name: 'El Primo', svgId: 'primo', hp: 5000, color: '#B71C1C' } }
     ]
   }
 ];
