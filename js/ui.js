@@ -440,6 +440,55 @@ export function hideReloadOverlay() {
   document.getElementById('reload-overlay').classList.add('hidden');
 }
 
+// ===== POWER-UP PROMPT =====
+export function showPowerUpPrompt(type, question, onAnswer) {
+  const overlay = document.getElementById('powerup-question-overlay');
+  if (!overlay) return;
+  overlay.classList.remove('hidden');
+  const names = { ammo: '🔫 תחמושת', super: '💥 אולטי', heal: '❤️ ריפוי', damage: '⚔️ נזק כפול' };
+  document.getElementById('powerup-prompt-title').textContent = '🎁 ' + (names[type] || 'בונוס');
+  document.getElementById('powerup-prompt-q').textContent = question.q;
+  const grid = document.getElementById('powerup-prompt-answers');
+  const feedback = document.getElementById('powerup-prompt-feedback');
+  feedback.classList.add('hidden');
+  grid.innerHTML = '';
+  question.a.forEach((answer, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'answer-btn';
+    btn.textContent = answer;
+    btn.addEventListener('click', () => {
+      if (btn.disabled) return;
+      const correct = i === question.c;
+      grid.querySelectorAll('.answer-btn').forEach(b => b.disabled = true);
+      btn.classList.add(correct ? 'correct' : 'wrong');
+      if (!correct) grid.querySelectorAll('.answer-btn')[question.c].classList.add('correct');
+      feedback.classList.remove('hidden');
+      feedback.className = 'reload-feedback ' + (correct ? 'success' : 'fail');
+      feedback.textContent = correct ? '✅ בונוס!' : '❌ ' + question.a[question.c];
+      setTimeout(() => {
+        overlay.classList.add('hidden');
+        feedback.classList.add('hidden');
+        grid.querySelectorAll('.answer-btn').forEach(b => { b.disabled = false; b.classList.remove('correct', 'wrong'); });
+        onAnswer(correct);
+      }, 700);
+    });
+    grid.appendChild(btn);
+  });
+}
+
+export function hidePowerUpPrompt() {
+  const overlay = document.getElementById('powerup-question-overlay');
+  if (overlay) overlay.classList.add('hidden');
+}
+
+// ===== HEALTH REGEN INDICATOR =====
+let regenTimeout = null;
+export function showHealthRegen(active) {
+  const el = document.getElementById('player-health-bar');
+  if (!el) return;
+  el.classList.toggle('regen-active', active);
+}
+
 export function showNotification(msg) {
   const el = document.getElementById('notification');
   el.textContent = msg;

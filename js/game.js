@@ -1,26 +1,25 @@
-import { brawlers, worlds, lossTips, RARITY_COLORS } from './data.js';
-import { generateQuestions, validateQuestionDifficulty } from './questions.js';
+import { brawlers, worlds, lossTips } from './data.js';
+import { generateQuestions } from './questions.js';
 import * as arena from './arena.js';
 import * as ui from './ui.js';
 
 let selectedBrawlerIndex = 0;
 let selectedWorldIndex = 0;
 let currentLevelIndex = 0;
-let playerHp, playerMaxHp;
-let enemyHp, enemyMaxHp;
+let playerHp, playerMaxHp, enemyHp, enemyMaxHp;
 let battleInProgress = false;
 let arenaInitialized = false;
-let activePowerUp = null;
-let isPausedForReload = false;
 let totalDamageDealt = 0;
 
-let playerAmmo = 6;
-let maxAmmo = 6;
-let reloadQuestions = [];
-let reloadQuestionIdx = 0;
-let reloadCorrect = 0;
+let activePowerUp = null;
+let lastHitTime = 0;
+let powerUpQuestion = null;
+let isQuestionActive = false;
 
-const MAX_AMMO = 6;
+const MAX_AMMO = 3;
+const SUPER_PER_HIT = 25;
+const REGEN_DELAY = 3000;
+const REGEN_RATE = 0.05;
 
 export function getSelectedBrawler() { return selectedBrawlerIndex; }
 export function getSelectedWorld() { return selectedWorldIndex; }
@@ -39,7 +38,7 @@ export function setSelectedBrawler(i) {
   ui.updateBrawlersPanel(i, data.brawlerData, data.unlockedBrawlers);
   ui.enableBattle(true);
   ui.spinBrawlerHero();
-  if (brawlers[i].rarity === 'אפי' || brawlers[i].rarity === 'מיתי' || brawlers[i].rarity === 'אגדה') {
+  if (brawlers[i].rarity === 'אפי' || brawlers[i].rarity === 'מיתי' || brawlers[i].rarity === 'אולטרה אגדי') {
     ui.rainbowBrawlerCard(brawlers[i].id);
   }
 }
@@ -67,37 +66,33 @@ export function startGame() {
   currentLevelIndex = Math.min(data.worldProgress[selectedWorldIndex] || 0, world.levels.length - 1);
   battleInProgress = false;
   activePowerUp = null;
-  isPausedForReload = false;
-  playerAmmo = MAX_AMMO;
-  maxAmmo = MAX_AMMO;
-  reloadQuestions = [];
-  reloadQuestionIdx = 0;
-  reloadCorrect = 0;
+  lastHitTime = 0;
+  totalDamageDealt = 0;
+  powerUpQuestion = null;
+  isQuestionActive = false;
 
-  if (!arenaInitialized) {
+  const initArenaNow = !arenaInitialized;
+  if (initArenaNow) {
     ui.closeAllPanels();
     arena.initArena(document.getElementById('game-canvas-container'));
-    arena.setArenaCallbacks({
-      onPlayerShoot: () => {},
-      onEnemyHit: (dmg) => handlePlayerHitEnemy(dmg),
-      onPlayerHit: (dmg) => handleEnemyHitPlayer(dmg),
-      onAmmoEmpty: () => startReload()
-    });
-    arenaInitialized = true;
-  } else {
-    arena.setArenaCallbacks({
-      onPlayerShoot: () => {},
-      onEnemyHit: (dmg) => handlePlayerHitEnemy(dmg),
-      onPlayerHit: (dmg) => handleEnemyHitPlayer(dmg),
-      onAmmoEmpty: () => startReload()
-    });
   }
 
-  arena.setReloading(false);
-  arena.setPlayerAmmo(MAX_AMMO);
-  arena.setMaxAmmo(MAX_AMMO);
-  arena.stopEnemyAI();
+  arena.setArenaCallbacks({
+    onPlayerShoot: () => {},
+    onEnemyHit: (dmg) => handlePlayerHit(dmg),
+    onPlayerHit: (dmg) => handleEnemyHit(dmg),
+    onSuperReady: () => {}
+  });
 
+  arena.setReloading(false);
+  arena.setAmmo(MAX_AMMO);
+  arena.setSuperCharge(0);
+  arena.stopEnemyAI();
+  arena.stopPowerUpSpawning();
+  arena.stopAmmoRegen();
+  arena.removePowerUpMesh();
+
+  if (initArenaNow) arenaInitialized = true;
   loadLevel();
 }
 
@@ -113,126 +108,191 @@ function loadLevel() {
   enemyMaxHp = level.enemy.hp;
   enemyHp = enemyMaxHp;
   battleInProgress = true;
-  activePowerUp = null;
-  arena.removePowerUpMesh();
+  lastHitTime = performance.now();
 
   ui.showScreen('game-screen');
   ui.updateHUD(currentLevelIndex);
-  ui.updatePowerUp(null);
-  ui.hideReloadOverlay();
-  ui.updateAmmoBar(playerAmmo, maxAmmo);
+  ui.updateHealthBars(playerHp, playerMaxHp, enemyHp, enemyMaxHp, brawler.name, level.enemy.name);
+  ui.updateAmmoBar(arena.getAmmo(), MAX_AMMO);
+  ui.hidePowerUpPrompt();
 
   arena.positionCharacters(
     { color: brawler.color, headColor: '#FBBF24' },
     { color: level.enemy.color, headColor: '#DC2626' }
   );
-  ui.updateHealthBars(playerHp, playerMaxHp, enemyHp, enemyMaxHp, brawler.name, level.enemy.name);
 
+  const reloadMs = (brawler.reload || 1.2) * 1000;
+  arena.startAmmoRegen();
   arena.startEnemyAI();
+  arena.startPowerUpSpawning((type) => handlePowerUpCollect(type));
+  startRegenCheck();
 }
 
-function handlePlayerHitEnemy(dmg) {
-  if (!battleInProgress || isPausedForReload) return;
+function handlePlayerHit(dmg) {
+  if (!battleInProgress) return;
   enemyHp -= dmg;
   totalDamageDealt += dmg;
   arena.damageFlash('enemy');
   arena.shakeCamera(0.02, 100);
-  ui.updateHealthBars(playerHp, playerMaxHp, Math.max(0, enemyHp), enemyMaxHp,
-    brawlers[selectedBrawlerIndex].name, worlds[selectedWorldIndex].levels[currentLevelIndex].enemy.name);
+
+  arena.addSuperCharge(SUPER_PER_HIT);
+
+  const brawler = brawlers[selectedBrawlerIndex];
+  const level = worlds[selectedWorldIndex].levels[currentLevelIndex];
+  ui.updateHealthBars(playerHp, playerMaxHp, Math.max(0, enemyHp), enemyMaxHp, brawler.name, level.enemy.name);
 
   if (enemyHp <= 0) {
     battleInProgress = false;
     arena.stopEnemyAI();
+    arena.stopPowerUpSpawning();
     setTimeout(() => winLevel(), 300);
   }
 }
 
-function handleEnemyHitPlayer(dmg) {
-  if (!battleInProgress || isPausedForReload) return;
+function handleEnemyHit(dmg) {
+  if (!battleInProgress) return;
+  lastHitTime = performance.now();
+
+  if (activePowerUp === 'shield') {
+    activePowerUp = null;
+    arena.removePowerUpMesh();
+    ui.updatePowerUp(null);
+    ui.showEffect('🛡️ מגן!', '#60A5FA');
+    return;
+  }
+
   playerHp -= dmg;
   arena.damageFlash('player');
   arena.shakeCamera(0.04, 150);
-  ui.updateHealthBars(Math.max(0, playerHp), playerMaxHp, enemyHp, enemyMaxHp,
-    brawlers[selectedBrawlerIndex].name, worlds[selectedWorldIndex].levels[currentLevelIndex].enemy.name);
 
-  // Check if player has shield power-up
-  if (activePowerUp === 'shield') {
-    ui.showPowerUpActivated('shield');
-    activePowerUp = null;
-    ui.updatePowerUp(null);
-    arena.removePowerUpMesh();
-    playerHp = Math.min(playerHp + dmg, playerMaxHp);
-    ui.showEffect('🛡️ מגן!', '#60A5FA');
-    ui.updateHealthBars(playerHp, playerMaxHp, enemyHp, enemyMaxHp,
-      brawlers[selectedBrawlerIndex].name, worlds[selectedWorldIndex].levels[currentLevelIndex].enemy.name);
-    return;
-  }
+  const brawler = brawlers[selectedBrawlerIndex];
+  const level = worlds[selectedWorldIndex].levels[currentLevelIndex];
+  ui.updateHealthBars(Math.max(0, playerHp), playerMaxHp, enemyHp, enemyMaxHp, brawler.name, level.enemy.name);
 
   if (playerHp <= 0) {
     battleInProgress = false;
     arena.stopEnemyAI();
+    arena.stopPowerUpSpawning();
     setTimeout(() => loseLevel(), 300);
   }
 }
 
-function startReload() {
-  if (isPausedForReload || !battleInProgress) return;
-  isPausedForReload = true;
-  arena.stopEnemyAI();
+// ===== HEALTH REGEN =====
+let regenInterval = null;
+
+function startRegenCheck() {
+  stopRegenCheck();
+  regenInterval = setInterval(() => {
+    if (!battleInProgress || isQuestionActive) return;
+    const now = performance.now();
+    if (now - lastHitTime > REGEN_DELAY && playerHp < playerMaxHp) {
+      playerHp = Math.min(playerMaxHp, playerHp + playerMaxHp * REGEN_RATE * 0.1);
+      const brawler = brawlers[selectedBrawlerIndex];
+      const level = worlds[selectedWorldIndex].levels[currentLevelIndex];
+      ui.updateHealthBars(playerHp, playerMaxHp, enemyHp, enemyMaxHp, brawler.name, level.enemy.name);
+      ui.showHealthRegen(true);
+    }
+    if (now - lastHitTime < REGEN_DELAY) {
+      ui.showHealthRegen(false);
+    }
+  }, 100);
+}
+
+function stopRegenCheck() {
+  if (regenInterval) { clearInterval(regenInterval); regenInterval = null; }
+}
+
+// ===== POWER-UP QUESTIONS =====
+function handlePowerUpCollect(type) {
+  if (!battleInProgress || isQuestionActive) return;
+  isQuestionActive = true;
   arena.setReloading(true);
 
   const worldIdx = selectedWorldIndex;
-  reloadQuestions = [];
-  reloadQuestionIdx = 0;
-  reloadCorrect = 0;
+  const questions = generateQuestions(worldIdx, currentLevelIndex, 10);
+  const q = questions.length > 0 ? questions[Math.floor(Math.random() * questions.length)] : null;
+  if (!q) { isQuestionActive = false; arena.setReloading(false); return; }
 
-  const levels = worlds[worldIdx].levels;
-  if (!levels || levels.length === 0) {
-    finishReload();
-    return;
+  powerUpQuestion = { q, type };
+  arena.stopEnemyAI();
+  ui.showPowerUpPrompt(type, q, (correct) => {
+    isQuestionActive = false;
+    arena.setReloading(false);
+    ui.hidePowerUpPrompt();
+
+    if (correct) {
+      applyPowerUpReward(type);
+      ui.showNotification('✅ ' + powerUpNames(type) + '!');
+    } else {
+      ui.showNotification('❌ תשובה שגויה, אין בונוס');
+    }
+    powerUpQuestion = null;
+    if (battleInProgress) arena.startEnemyAI();
+  });
+}
+
+function powerUpNames(type) {
+  const names = { ammo: '🔫 תחמושת מלאה', super: '💥 אולטי +50%', heal: '❤️ ריפוי +30%', damage: '⚔️ נזק כפול 5 שניות' };
+  return names[type] || '🎁 בונוס';
+}
+
+function applyPowerUpReward(type) {
+  switch (type) {
+    case 'ammo':
+      arena.setAmmo(MAX_AMMO);
+      break;
+    case 'super':
+      arena.addSuperCharge(50);
+      break;
+    case 'heal':
+      playerHp = Math.min(playerMaxHp, playerHp + Math.floor(playerMaxHp * 0.3));
+      const b = brawlers[selectedBrawlerIndex];
+      const l = worlds[selectedWorldIndex].levels[currentLevelIndex];
+      ui.updateHealthBars(playerHp, playerMaxHp, enemyHp, enemyMaxHp, b.name, l.enemy.name);
+      break;
+    case 'damage':
+      activePowerUp = 'double_damage';
+      arena.spawnPowerUpMesh('double_damage');
+      ui.updatePowerUp('double_damage');
+      setTimeout(() => {
+        if (activePowerUp === 'double_damage') {
+          activePowerUp = null;
+          arena.removePowerUpMesh();
+          ui.updatePowerUp(null);
+        }
+      }, 5000);
+      break;
   }
+}
 
-  for (let d = 1; d <= 4; d++) {
-    const found = generateQuestions(worldIdx, Math.min(d - 1, 2), 10);
-    const filtered = found.filter(q => q._score >= d && q._score <= d + 1);
-    const chosen = filtered.length > 0 ? filtered[0] : found[0];
-    if (chosen) reloadQuestions.push(chosen);
-    else {
-      const fallback = generateQuestions(worldIdx, 0, 1);
-      if (fallback[0]) reloadQuestions.push(fallback[0]);
+// ===== SUPER =====
+export function activateSuper() {
+  if (!battleInProgress || !arena.getIsSuperReady()) return;
+  if (isQuestionActive) return;
+
+  arena.useSuper();
+  const brawler = brawlers[selectedBrawlerIndex];
+  const level = worlds[selectedWorldIndex].levels[currentLevelIndex];
+
+  if (brawler.superDamage < 0) {
+    playerHp = Math.min(playerMaxHp, playerHp + Math.floor(playerMaxHp * Math.abs(brawler.superDamage)));
+    ui.showEffect('💚 ' + brawler.superName + '!', '#10B981');
+  } else {
+    const bonusDmg = Math.floor(enemyMaxHp * brawler.superDamage);
+    enemyHp -= bonusDmg;
+    totalDamageDealt += bonusDmg;
+    ui.showEffect('💥 ' + brawler.superName + '!', '#FFD600');
+    arena.shakeCamera(0.08, 300);
+    if (enemyHp <= 0) {
+      battleInProgress = false;
+      arena.stopEnemyAI();
+      arena.stopPowerUpSpawning();
+      setTimeout(() => winLevel(), 300);
+      return;
     }
   }
-
-  ui.showReloadOverlay(reloadQuestions, onReloadAnswer);
-}
-
-function onReloadAnswer(isCorrect) {
-  if (isCorrect) reloadCorrect++;
-  reloadQuestionIdx++;
-
-  if (reloadQuestionIdx >= reloadQuestions.length) {
-    finishReload();
-    return;
-  }
-  ui.updateReloadProgress(reloadQuestionIdx + 1, reloadQuestions.length);
-  ui.showReloadCurrentQuestion(reloadQuestions[reloadQuestionIdx]);
-}
-
-function finishReload() {
-  const refill = Math.max(1, Math.floor((reloadCorrect / reloadQuestions.length) * maxAmmo));
-  playerAmmo = Math.min(maxAmmo, playerAmmo + refill);
-  ui.hideReloadOverlay();
-  arena.setPlayerAmmo(playerAmmo);
-  arena.setReloading(false);
-  isPausedForReload = false;
-  ui.updateAmmoBar(playerAmmo, maxAmmo);
-  if (playerAmmo > 0) {
-    arena.startEnemyAI();
-  } else {
-    ui.showNotification('❌ לא הצלחת לטעון!');
-    battleInProgress = false;
-    setTimeout(() => loseLevel(), 500);
-  }
+  arena.damageFlash('enemy');
+  ui.updateHealthBars(playerHp, playerMaxHp, Math.max(0, enemyHp), enemyMaxHp, brawler.name, level.enemy.name);
 }
 
 function winLevel() {
@@ -242,7 +302,7 @@ function winLevel() {
   const brawler = brawlers[selectedBrawlerIndex];
   arena.removePowerUpMesh();
 
-  const brawlerLevel = (data.brawlerData[brawler.id] && data.brawlerData[brawler.id].level) || 1;
+  const brawlerLevel = (data.brawlerData[brawler.id]?.level) || 1;
   const trophies = 15 + (currentLevelIndex * 8) + brawlerLevel * 2;
 
   if (!data.brawlerData[brawler.id]) data.brawlerData[brawler.id] = { trophies: 0, xp: 0, level: 1 };
@@ -253,18 +313,13 @@ function winLevel() {
   data.brawlerData[brawler.id].xp += xpGain;
   data.xp += xpGain;
 
-  const xpNeeded = brawlerLevel * 80;
-  if (data.brawlerData[brawler.id].xp >= xpNeeded) {
-    data.brawlerData[brawler.id].xp -= xpNeeded;
+  if (data.brawlerData[brawler.id].xp >= (brawlerLevel * 80)) {
+    data.brawlerData[brawler.id].xp -= (brawlerLevel * 80);
     data.brawlerData[brawler.id].level++;
-    ui.showNotification('⬆️ ' + brawler.name + ' עלה רמה! רמה ' + data.brawlerData[brawler.id].level);
   }
-
-  const playerXpNeeded = data.level * 100;
-  if (data.xp >= playerXpNeeded) {
-    data.xp -= playerXpNeeded;
+  if (data.xp >= data.level * 100) {
+    data.xp -= data.level * 100;
     data.level++;
-    ui.showNotification('🎉 עלית רמה! רמה ' + data.level);
   }
 
   const oldProgress = data.worldProgress[selectedWorldIndex] || 0;
@@ -285,7 +340,7 @@ function loseLevel() {
   arena.removePowerUpMesh();
   const data = ui.getSaveData();
   const brawler = brawlers[selectedBrawlerIndex];
-  const trophies = Math.max(3, Math.floor(enemyHp < 0 ? 5 : 3));
+  const trophies = Math.max(3, Math.floor(enemyHp <= 0 ? 5 : 3));
   if (!data.brawlerData[brawler.id]) data.brawlerData[brawler.id] = { trophies: 0, xp: 0, level: 1 };
   data.brawlerData[brawler.id].trophies += trophies;
   data.totalTrophies += trophies;
@@ -305,7 +360,7 @@ function checkUnlocks(data) {
       setTimeout(() => {
         ui.showNotification('🎉 פתחת דמות חדשה: ' + b.name + '!');
         ui.spinBrawlerHero();
-        if (b.rarity === 'אפי' || b.rarity === 'מיתי' || b.rarity === 'אגדה') {
+        if (b.rarity === 'אפי' || b.rarity === 'מיתי' || b.rarity === 'אולטרה אגדי') {
           ui.rainbowBrawlerCard(b.id);
         }
       }, 500);
@@ -324,13 +379,11 @@ function refreshUI(data) {
 }
 
 export function resetToLobby() {
-  battleInProgress = false;
-  isPausedForReload = false;
-  activePowerUp = null;
-  arena.stopEnemyAI();
-  arena.setReloading(false);
-  arena.removePowerUpMesh();
-  ui.hideReloadOverlay();
+  battleInProgress = false; isQuestionActive = false;
+  arena.stopEnemyAI(); arena.stopPowerUpSpawning(); arena.stopAmmoRegen();
+  stopRegenCheck();
+  arena.setReloading(false); arena.removePowerUpMesh();
+  ui.hidePowerUpPrompt();
   ui.showScreen('lobby-screen');
   loadSavedState();
 }
@@ -346,10 +399,13 @@ export function nextLevel() {
   }
 }
 
-export function retryLevel() { loadLevel(); }
+export function retryLevel() {
+  arena.stopPowerUpSpawning(); arena.stopAmmoRegen(); stopRegenCheck();
+  loadLevel();
+}
 
 export function goBack() {
-  if (battleInProgress && !confirm('להפסיק את הקרב ולחזור לתפריט?')) return;
+  if (battleInProgress && !confirm('להפסיק את הקרב?')) return;
   resetToLobby();
 }
 

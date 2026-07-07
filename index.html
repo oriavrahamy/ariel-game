@@ -112,7 +112,7 @@
   </div>
 
   <div id="health-bars">
-    <div class="health-bar player-health">
+    <div class="health-bar player-health" id="player-health-bar">
       <div class="health-label">
         <span id="player-name-hud">שחקן</span>
         <span id="player-health-text">5000/5000</span>
@@ -155,7 +155,7 @@
     </div>
   </div>
 
-  <div id="super-bar-container">
+  <div id="super-bar-container" class="clickable" onclick="window.dispatchEvent(new CustomEvent('use-super'))">
     <div class="super-bar-label">💥 אולטי</div>
     <div class="super-bar">
       <div class="super-fill" id="super-fill" style="width: 0%"></div>
@@ -163,6 +163,16 @@
   </div>
 
   <div id="ammo-display" class="ammo-bar">🔫 6/6</div>
+
+  <!-- POWER-UP QUESTION OVERLAY -->
+  <div id="powerup-question-overlay" class="hidden">
+    <div class="reload-box" style="z-index:30;">
+      <div class="reload-header" id="powerup-prompt-title">🎁 בונוס!</div>
+      <div class="reload-question" id="powerup-prompt-q">מה התשובה?</div>
+      <div class="reload-answers" id="powerup-prompt-answers"></div>
+      <div class="reload-feedback hidden" id="powerup-prompt-feedback"></div>
+    </div>
+  </div>
 
   <div id="powerup-indicator" class="hidden">
     <span id="powerup-icon">🛡️</span>

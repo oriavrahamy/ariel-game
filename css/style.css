@@ -526,6 +526,13 @@ html, body {
 .health-track { height: 10px; background: #000; position: relative; }
 .health-fill { height: 100%; transition: width 0.3s ease; position: relative; z-index: 2; }
 .player-health .health-fill { background: #00E676; }
+.player-health.regen-active .health-fill {
+  animation: regen-pulse 1s ease-in-out infinite;
+}
+@keyframes regen-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
 .enemy-health .health-fill { background: #FF1744; }
 .health-damage { position: absolute; z-index: 1; height: 100%; background: rgba(255,255,255,0.15); transition: width 0.5s ease; top: 0; }
 

@@ -46,6 +46,10 @@ function onLobby() {
   game.resetToLobby();
 }
 
+window.addEventListener('use-super', () => {
+  game.activateSuper();
+});
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
 } else {
