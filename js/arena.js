@@ -83,8 +83,14 @@ export function stopAmmoRegen() {
 }
 
 export function initArena(container) {
-  const w = Math.max(container.clientWidth, 1);
-  const h = Math.max(container.clientHeight, 1);
+  let w = container.clientWidth;
+  let h = container.clientHeight;
+  if (w < 10 || h < 10) {
+    w = window.innerWidth;
+    h = window.innerHeight;
+  }
+  w = Math.max(w, 1);
+  h = Math.max(h, 1);
 
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x0F0724);

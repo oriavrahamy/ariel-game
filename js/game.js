@@ -74,7 +74,6 @@ export function startGame() {
   const initArenaNow = !arenaInitialized;
   if (initArenaNow) {
     ui.closeAllPanels();
-    arena.initArena(document.getElementById('game-canvas-container'));
   }
 
   arena.setArenaCallbacks({
@@ -92,7 +91,13 @@ export function startGame() {
   arena.stopAmmoRegen();
   arena.removePowerUpMesh();
 
-  if (initArenaNow) arenaInitialized = true;
+  ui.showScreen('game-screen');
+
+  if (initArenaNow) {
+    arena.initArena(document.getElementById('game-canvas-container'));
+    arenaInitialized = true;
+  }
+
   loadLevel();
 }
 
