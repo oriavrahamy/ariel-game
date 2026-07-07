@@ -18,8 +18,8 @@ const COLORS = {
 };
 
 export function initArena(container) {
-  const w = container.clientWidth;
-  const h = container.clientHeight;
+  const w = Math.max(container.clientWidth, 1);
+  const h = Math.max(container.clientHeight, 1);
 
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x0F0724);

@@ -1,4 +1,4 @@
-import { brawlers, worlds, lossTips } from './data.js';
+import { brawlers, worlds, lossTips, RARITY_COLORS } from './data.js';
 import { generateQuestions, validateQuestionDifficulty } from './questions.js';
 import * as arena from './arena.js';
 import * as ui from './ui.js';
@@ -38,6 +38,10 @@ export function setSelectedBrawler(i) {
   ui.updateLobbyBrawler(brawlers[i], bd.trophies);
   ui.updateBrawlersPanel(i, data.brawlerData, data.unlockedBrawlers);
   ui.enableBattle(true);
+  ui.spinBrawlerHero();
+  if (brawlers[i].rarity === 'אפי' || brawlers[i].rarity === 'מיתי' || brawlers[i].rarity === 'אגדה') {
+    ui.rainbowBrawlerCard(brawlers[i].id);
+  }
 }
 
 export function setSelectedWorld(i) {
@@ -51,7 +55,13 @@ export function setSelectedWorld(i) {
 
 export function startGame() {
   const data = ui.getSaveData();
-  if (!data.unlockedBrawlers.includes(brawlers[selectedBrawlerIndex].id)) return;
+  if (!data.unlockedBrawlers.includes(brawlers[selectedBrawlerIndex].id)) {
+      if (data.unlockedBrawlers.length > 0) {
+      const firstUnlocked = brawlers.findIndex(b => data.unlockedBrawlers.includes(b.id));
+      if (firstUnlocked >= 0) setSelectedBrawler(firstUnlocked);
+    }
+    return;
+  }
 
   const world = worlds[selectedWorldIndex];
   currentLevelIndex = Math.min(data.worldProgress[selectedWorldIndex] || 0, world.levels.length - 1);
@@ -157,6 +167,7 @@ function handleCorrectAnswer() {
   if (data.ownedItems.includes('dmg-up')) damage = Math.floor(damage * 1.15);
 
   if (isSuperReady) {
+    ui.lightningFlash();
     const superDmg = Math.floor(enemyMaxHp * brawler.superDamage);
     if (brawler.superDamage < 0) {
       playerHp = Math.min(playerMaxHp, playerHp + Math.floor(playerMaxHp * Math.abs(brawler.superDamage)));
@@ -259,6 +270,7 @@ function winLevel() {
   checkUnlocks(data);
   ui.saveGameData(data);
   refreshUI(data);
+  ui.lightningFlash();
 
   const tip = '🎉 השלמת את "' + level.name + '"! ' + (accuracy >= 80 ? 'תוצאה מצוינת!' : 'המשך להתאמן!');
   ui.showResults(true, trophies, accuracy, totalDamageDealt, tip);
@@ -289,7 +301,14 @@ function checkUnlocks(data) {
     if (data.totalTrophies >= b.unlockTrophies && !data.unlockedBrawlers.includes(b.id)) {
       data.unlockedBrawlers.push(b.id);
       if (!data.brawlerData[b.id]) data.brawlerData[b.id] = { trophies: 0, xp: 0, level: 1 };
-      setTimeout(() => ui.showNotification('🎉 פתחת דמות חדשה: ' + b.name + '!'), 500);
+      ui.lightningFlash();
+      setTimeout(() => {
+        ui.showNotification('🎉 פתחת דמות חדשה: ' + b.name + '!');
+        ui.spinBrawlerHero();
+        if (b.rarity === 'אפי' || b.rarity === 'מיתי' || b.rarity === 'אגדה') {
+          ui.rainbowBrawlerCard(b.id);
+        }
+      }, 500);
     }
   });
 }
@@ -330,8 +349,6 @@ export function goBack() {
 }
 
 export function initGame() {
-  arena.initArena(document.getElementById('game-canvas-container'));
-  arenaInitialized = true;
   loadSavedState();
 }
 

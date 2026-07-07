@@ -155,6 +155,19 @@ html, body {
   object-fit: contain;
   filter: drop-shadow(0 10px 30px rgba(0,0,0,0.5));
   image-rendering: auto;
+  animation: float-bob 4s ease-in-out infinite;
+}
+
+.game-badge {
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  padding: 3px 14px;
+  background: #000;
+  color: #FFD600;
+  border: 2px solid #FFD600;
+  margin-bottom: 4px;
 }
 
 .brawler-hero-info {
@@ -655,6 +668,103 @@ html, body {
 }
 #notification.hidden { opacity: 0; transform: translateX(-50%) translateY(-20px); pointer-events: none; }
 #notification.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ===== RAINBOW ANIMATION ===== */
+@keyframes rainbow-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.rainbow-text {
+  background: linear-gradient(90deg, #ff0000, #ff8800, #ffff00, #00ff00, #0088ff, #8800ff, #ff0088);
+  background-size: 600% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: rainbow-shift 3s linear infinite;
+}
+.rainbow-border {
+  animation: rainbow-shift 3s linear infinite;
+  border-image: linear-gradient(90deg, #ff0000, #ff8800, #ffff00, #00ff00, #0088ff, #8800ff, #ff0088) 1;
+  border-image-slice: 1;
+}
+@keyframes rainbow-glow {
+  0%, 100% { filter: drop-shadow(0 0 10px rgba(255,0,0,0.5)); }
+  16% { filter: drop-shadow(0 0 10px rgba(255,136,0,0.5)); }
+  33% { filter: drop-shadow(0 0 10px rgba(255,255,0,0.5)); }
+  50% { filter: drop-shadow(0 0 10px rgba(0,255,0,0.5)); }
+  66% { filter: drop-shadow(0 0 10px rgba(0,136,255,0.5)); }
+  83% { filter: drop-shadow(0 0 10px rgba(136,0,255,0.5)); }
+  100% { filter: drop-shadow(0 0 10px rgba(255,0,136,0.5)); }
+}
+.rainbow-glow {
+  animation: rainbow-glow 3s linear infinite;
+}
+
+/* ===== LIGHTNING EFFECT ===== */
+@keyframes lightning-flash {
+  0%, 100% { opacity: 0; }
+  8% { opacity: 0.9; }
+  10% { opacity: 0; }
+  16% { opacity: 0.7; }
+  18% { opacity: 0; }
+  22% { opacity: 0.95; }
+  24% { opacity: 0; }
+  30% { opacity: 0.5; }
+  32%, 100% { opacity: 0; }
+}
+.lightning {
+  position: fixed; inset: 0;
+  z-index: 999;
+  background: white;
+  pointer-events: none;
+  animation: lightning-flash 0.6s ease-out forwards;
+}
+
+@keyframes lightning-glow-pulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(255,255,255,0.3), 0 0 20px rgba(100,150,255,0.2); }
+  50% { box-shadow: 0 0 30px rgba(255,255,255,0.9), 0 0 60px rgba(100,150,255,0.5), 0 0 100px rgba(100,150,255,0.3); }
+}
+.lightning-pulse {
+  animation: lightning-glow-pulse 1.5s ease-in-out infinite;
+}
+
+/* ===== ROTATION & SPIN ===== */
+@keyframes float-bob {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-6px) rotate(-1deg); }
+  50% { transform: translateY(0) rotate(0deg); }
+  75% { transform: translateY(-6px) rotate(1deg); }
+}
+
+@keyframes spin-360 {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.spin-once {
+  animation: spin-360 0.6s ease-in-out;
+}
+
+.spin-once:hover {
+  animation: spin-360 0.6s ease-in-out;
+}
+
+@keyframes card-hover {
+  0% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.05) rotate(3deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+/* ===== UNLOCK CELEBRATION ===== */
+@keyframes unlock-pop {
+  0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+  50% { transform: scale(1.3) rotate(10deg); opacity: 1; }
+  70% { transform: scale(0.9) rotate(-5deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+.unlock-pop {
+  animation: unlock-pop 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+}
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 480px) {

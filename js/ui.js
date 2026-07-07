@@ -356,6 +356,30 @@ export function showResults(won, trophies, accuracy, damage, tip) {
   document.getElementById('results-tip').textContent = tip || (won ? '💪 המשך כך!' : lossTips[Math.floor(Math.random() * lossTips.length)]);
 }
 
+export function lightningFlash() {
+  const el = document.createElement('div');
+  el.className = 'lightning';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 700);
+}
+
+export function spinBrawlerHero() {
+  const hero = document.getElementById('brawler-hero');
+  if (!hero) return;
+  hero.style.animation = 'none';
+  void hero.offsetWidth;
+  hero.style.animation = 'spin-360 0.6s ease-in-out, float-bob 4s ease-in-out infinite';
+}
+
+export function rainbowBrawlerCard(brawlerId) {
+  const cards = document.querySelectorAll('.brawler-card');
+  cards.forEach(card => {
+    if (card.dataset.id === brawlerId) {
+      card.classList.add('rainbow-border', 'rainbow-glow');
+    }
+  });
+}
+
 export function showNotification(msg) {
   const el = document.getElementById('notification');
   el.textContent = msg;
@@ -373,7 +397,26 @@ export function getSelectedWorldIndex() {
 
 function getRawData() {
   try {
-    return JSON.parse(localStorage.getItem('brawlPercentsData')) || getDefaultData();
+    const raw = JSON.parse(localStorage.getItem('brawlPercentsData'));
+    if (!raw) return getDefaultData();
+    if (!raw.totalTrophies && raw.trophies !== undefined) {
+      raw.totalTrophies = raw.trophies;
+    }
+    if (!raw.unlockedBrawlers) {
+      raw.unlockedBrawlers = ['ariel'];
+    }
+    if (!raw.brawlerData) {
+      raw.brawlerData = { 'ariel': { trophies: raw.totalTrophies || 0, xp: 0, level: 1 } };
+    }
+    if (raw.selectedBrawler === undefined || !raw.unlockedBrawlers.includes(brawlers[raw.selectedBrawler]?.id)) {
+      raw.selectedBrawler = 0;
+    }
+    if (raw.selectedWorld === undefined) raw.selectedWorld = 0;
+    if (raw.worldProgress === undefined) raw.worldProgress = [0, 0, 0, 0];
+    if (raw.level === undefined) raw.level = 1;
+    if (raw.xp === undefined) raw.xp = 0;
+    if (raw.ownedItems === undefined) raw.ownedItems = [];
+    return raw;
   } catch {
     return getDefaultData();
   }
