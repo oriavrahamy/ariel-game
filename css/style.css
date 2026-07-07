@@ -1,3 +1,30 @@
+@font-face {
+  font-family: 'Yarden';
+  src: url('../fonts/yarden-regular-alefalefalef.woff2') format('woff2'),
+       url('../fonts/yarden-regular-alefalefalef.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Yarden';
+  src: url('../fonts/yarden-bold-alefalefalef.woff2') format('woff2'),
+       url('../fonts/yarden-bold-alefalefalef.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Yarden';
+  src: url('../fonts/yarden-bold-alefalefalef.woff2') format('woff2'),
+       url('../fonts/yarden-bold-alefalefalef.woff') format('woff');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -24,7 +51,7 @@ html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  font-family: 'Impact', 'Arial Black', 'Franklin Gothic Heavy', sans-serif;
+  font-family: 'Yarden', 'Arial Black', sans-serif;
   background: var(--bg);
   color: var(--black);
   direction: rtl;
