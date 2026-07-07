@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Brawl Percents - באלנס אחוזים</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+
+<!-- LOBBY SCREEN -->
+<div id="lobby-screen" class="screen active">
+  <header class="lobby-header">
+    <h1 class="game-title">⚔️ באלנס אחוזים</h1>
+    <p class="game-subtitle">Brawl Percents</p>
+    <div class="trophy-display">
+      <span class="trophy-icon">🏆</span>
+      <span id="total-trophies">0</span>
+      <span class="trophy-label">גביעים</span>
+    </div>
+  </header>
+
+  <div class="bento-grid">
+    <div class="bento-item profile-card" style="--card-color: #8B5CF6">
+      <div class="card-header">
+        <span class="card-icon">👤</span>
+        <span class="card-title">פרופיל</span>
+      </div>
+      <div class="card-body">
+        <div class="profile-avatar">🎮</div>
+        <div class="profile-info">
+          <span class="profile-name" id="player-name">שחקן ו'</span>
+          <span class="profile-level" id="player-level">רמה 1</span>
+        </div>
+        <div class="xp-bar-container">
+          <div class="xp-bar">
+            <div class="xp-fill" id="xp-fill" style="width: 0%"></div>
+          </div>
+          <span class="xp-text" id="xp-text">0 / 100 XP</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bento-item brawlers-card" style="--card-color: #EC4899">
+      <div class="card-header">
+        <span class="card-icon">⚡</span>
+        <span class="card-title">בוחר דמות</span>
+      </div>
+      <div class="card-body">
+        <div class="brawlers-grid" id="brawlers-grid">
+        </div>
+        <div class="selected-brawler-info" id="selected-brawler-info">
+          <span class="brawler-stats">לחץ על דמות לבחירה</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bento-item worlds-card" style="--card-color: #10B981">
+      <div class="card-header">
+        <span class="card-icon">🗺️</span>
+        <span class="card-title">מפת עולמות</span>
+      </div>
+      <div class="card-body">
+        <div class="worlds-list" id="worlds-list">
+        </div>
+      </div>
+    </div>
+
+    <div class="bento-item shop-card" style="--card-color: #F59E0B">
+      <div class="card-header">
+        <span class="card-icon">🛒</span>
+        <span class="card-title">חנות</span>
+      </div>
+      <div class="card-body">
+        <div class="shop-items" id="shop-items">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn-start" id="btn-start" disabled>
+    <span>🎯</span> התחל קרב
+  </button>
+</div>
+
+<!-- GAME SCREEN -->
+<div id="game-screen" class="screen">
+  <div id="game-canvas-container"></div>
+
+  <div id="game-hud">
+    <button class="btn-back" id="btn-back">✕</button>
+    <div class="hud-level" id="hud-level">שלב 1</div>
+    <div class="hud-wave" id="hud-wave">גל 1/3</div>
+  </div>
+
+  <div id="health-bars">
+    <div class="health-bar player-health">
+      <div class="health-label">
+        <span id="player-name-hud">שחקן</span>
+        <span id="player-health-text">5000/5000</span>
+      </div>
+      <div class="health-track">
+        <div class="health-fill" id="player-health-fill" style="width: 100%"></div>
+        <div class="health-damage" id="player-health-damage"></div>
+      </div>
+    </div>
+    <div class="health-bar enemy-health">
+      <div class="health-label">
+        <span id="enemy-name-hud">אויב</span>
+        <span id="enemy-health-text">2000/2000</span>
+      </div>
+      <div class="health-track">
+        <div class="health-fill" id="enemy-health-fill" style="width: 100%"></div>
+        <div class="health-damage" id="enemy-health-damage"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="question-overlay" class="hidden">
+    <div class="question-box">
+      <div class="question-topic" id="question-topic">🌲 המרת שברים</div>
+      <div class="question-text" id="question-text">מהו 1/2 באחוזים?</div>
+      <div class="answers-grid" id="answers-grid"></div>
+      <div class="question-feedback hidden" id="question-feedback"></div>
+    </div>
+  </div>
+
+  <div id="super-bar-container">
+    <div class="super-bar-label">💥 אולטי</div>
+    <div class="super-bar">
+      <div class="super-fill" id="super-fill" style="width: 0%"></div>
+    </div>
+  </div>
+
+  <div id="powerup-indicator" class="hidden">
+    <span class="powerup-label">🎁 פאוור-אפ</span>
+    <span id="powerup-icon">🛡️</span>
+    <span id="powerup-name">מגן</span>
+  </div>
+
+  <div id="attack-effect" class="hidden">
+    <div class="effect-text" id="effect-text">🔥 -25%!</div>
+  </div>
+</div>
+
+<!-- RESULTS SCREEN -->
+<div id="results-screen" class="screen">
+  <div class="results-container">
+    <div class="results-icon" id="results-icon">🏆</div>
+    <h2 class="results-title" id="results-title">ניצחון!</h2>
+    <div class="results-stats">
+      <div class="stat-row">
+        <span>גביעים שהושגו:</span>
+        <span class="stat-value" id="results-trophies">+30 🏆</span>
+      </div>
+      <div class="stat-row">
+        <span>דיוק תשובות:</span>
+        <span class="stat-value" id="results-accuracy">100%</span>
+      </div>
+      <div class="stat-row">
+        <span>נזק שגרם:</span>
+        <span class="stat-value" id="results-damage-dealt">0</span>
+      </div>
+    </div>
+    <div class="results-tip" id="results-tip"></div>
+    <div class="results-buttons">
+      <button class="btn-next" id="btn-next">המשך ➜</button>
+      <button class="btn-retry" id="btn-retry">🔄 נסה שוב</button>
+      <button class="btn-lobby" id="btn-lobby">🏠 חזרה לתפריט</button>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIFICATION -->
+<div id="notification" class="hidden"></div>
+
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js"
+  }
+}
+</script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
