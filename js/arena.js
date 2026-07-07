@@ -9,6 +9,35 @@ let powerUpGroup = new THREE.Group();
 let animFrameId = null;
 let isAnimating = false;
 
+let projectiles = [];
+let enemyTimer = null;
+let onPlayerShootCb = null, onEnemyHitCb = null, onPlayerHitCb = null;
+let onAmmoEmptyCb = null;
+let isReloading = false;
+let playerAmmo = 6, maxAmmo = 6;
+let enemyFireInterval = 2000;
+let containerEl = null;
+
+export function setArenaCallbacks(cb) {
+  onPlayerShootCb = cb.onPlayerShoot || null;
+  onEnemyHitCb = cb.onEnemyHit || null;
+  onPlayerHitCb = cb.onPlayerHit || null;
+  onAmmoEmptyCb = cb.onAmmoEmpty || null;
+}
+
+export function setReloading(v) { isReloading = v; }
+
+export function setPlayerAmmo(ammo) {
+  playerAmmo = ammo;
+  const el = document.getElementById('ammo-display');
+  if (el) el.textContent = '🔫 ' + ammo + '/' + maxAmmo;
+}
+
+export function setMaxAmmo(v) {
+  maxAmmo = v;
+  document.getElementById('ammo-display') && (document.getElementById('ammo-display').textContent = '🔫 ' + playerAmmo + '/' + maxAmmo);
+}
+
 const COLORS = {
   floorA: 0x4C1D95,
   floorB: 0x6D28D9,
@@ -45,6 +74,10 @@ export function initArena(container) {
   scene.add(playerGroup);
   scene.add(enemyGroup);
   scene.add(powerUpGroup);
+
+  containerEl = container;
+  container.style.cursor = 'crosshair';
+  container.addEventListener('click', onCanvasClick);
 
   window.addEventListener('resize', onResize);
   startAnimLoop();
@@ -345,6 +378,100 @@ export function removePowerUpMesh() {
   }
 }
 
+function onCanvasClick() {
+  if (isReloading || !onPlayerShootCb) return;
+  if (playerAmmo <= 0) {
+    if (onAmmoEmptyCb) onAmmoEmptyCb();
+    return;
+  }
+  onPlayerShootCb();
+  playerAmmo = Math.max(0, playerAmmo - 1);
+  setPlayerAmmo(playerAmmo);
+  const from = new THREE.Vector3(-1.8, 0.8, 0);
+  const to = new THREE.Vector3(1.8, 0.8, 0);
+  fireBullet(from, to, () => {
+    if (onEnemyHitCb) onEnemyHitCb(1);
+  });
+  if (playerAmmo <= 0 && onAmmoEmptyCb) setTimeout(() => onAmmoEmptyCb(), 400);
+}
+
+function bulletMat() {
+  return new THREE.MeshStandardMaterial({
+    color: 0xFFD600, emissive: 0xFFD600, emissiveIntensity: 1.5,
+    transparent: true, opacity: 1
+  });
+}
+function enemyBulletMat() {
+  return new THREE.MeshStandardMaterial({
+    color: 0xFF1744, emissive: 0xFF1744, emissiveIntensity: 1.5,
+    transparent: true, opacity: 1
+  });
+}
+
+function fireBullet(from, to, onHit) {
+  const isEnemy = from.x > 0;
+  const mat = isEnemy ? enemyBulletMat() : bulletMat();
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 6), mat);
+  mesh.position.copy(from);
+  scene.add(mesh);
+
+  const startTime = performance.now();
+  const duration = 300;
+  const startPos = from.clone();
+  const endPos = to.clone();
+
+  projectiles.push({ mesh, startPos, endPos, startTime, duration, onHit, hit: false });
+}
+
+export function startEnemyAI() {
+  stopEnemyAI();
+  function scheduleShot() {
+    if (isReloading || !onPlayerHitCb) {
+      enemyTimer = setTimeout(scheduleShot, 500);
+      return;
+    }
+    const delay = 1500 + Math.random() * 2000;
+    enemyTimer = setTimeout(() => {
+      if (isReloading) { scheduleShot(); return; }
+      const from = new THREE.Vector3(1.8, 0.8, 0);
+      const to = new THREE.Vector3(-1.8, 0.8, 0);
+      fireBullet(from, to, () => {
+        if (onPlayerHitCb) onPlayerHitCb(1);
+      });
+      scheduleShot();
+    }, delay);
+  }
+  scheduleShot();
+}
+
+export function stopEnemyAI() {
+  if (enemyTimer) { clearTimeout(enemyTimer); enemyTimer = null; }
+}
+
+function animateProjectiles() {
+  const now = performance.now();
+  for (let i = projectiles.length - 1; i >= 0; i--) {
+    const p = projectiles[i];
+    const elapsed = now - p.startTime;
+    const t = Math.min(elapsed / p.duration, 1);
+    const eased = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+    p.mesh.position.lerpVectors(p.startPos, p.endPos, eased);
+    const scale = 1 + Math.sin(t * Math.PI * 6) * 0.3;
+    p.mesh.scale.set(scale, scale, scale);
+    p.mesh.material.opacity = 1 - t * 0.3;
+    if (t >= 1) {
+      if (!p.hit) {
+        p.hit = true;
+        if (p.onHit) p.onHit();
+      }
+      scene.remove(p.mesh);
+      p.mesh.material.dispose();
+      p.mesh.geometry.dispose();
+      projectiles.splice(i, 1);
+    }
+  }
+}
+
 function onResize() {
   if (!renderer || !camera) return;
   const container = renderer.domElement.parentElement;
@@ -390,6 +517,8 @@ function startAnimLoop() {
         }
       });
     }
+
+    animateProjectiles();
 
     shakeOffsetX *= 0.85;
     shakeOffsetY *= 0.85;

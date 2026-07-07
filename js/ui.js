@@ -380,6 +380,66 @@ export function rainbowBrawlerCard(brawlerId) {
   });
 }
 
+// ===== AMMO & RELOAD =====
+export function updateAmmoBar(ammo, max) {
+  const el = document.getElementById('ammo-display');
+  if (el) el.textContent = '🔫 ' + ammo + '/' + max;
+}
+
+export function showReloadOverlay(questions, onAnswer) {
+  const overlay = document.getElementById('reload-overlay');
+  overlay.classList.remove('hidden');
+  window._reloadOnAnswer = onAnswer;
+  window._reloadQuestions = questions;
+  window._reloadIdx = 0;
+  showReloadCurrentQuestion(questions[0]);
+  updateReloadProgress(1, questions.length);
+}
+
+export function updateReloadProgress(current, total) {
+  const el = document.getElementById('reload-progress');
+  if (el) el.textContent = 'שאלה ' + current + ' / ' + total;
+}
+
+export function showReloadCurrentQuestion(q) {
+  if (!q) return;
+  const topic = document.getElementById('reload-topic');
+  const question = document.getElementById('reload-question');
+  const answers = document.getElementById('reload-answers');
+  const feedback = document.getElementById('reload-feedback');
+  const worldIdx = getSelectedWorldIndex();
+  topic.textContent = (worlds[worldIdx]?.emoji || '') + ' ' + (worlds[worldIdx]?.topic || '');
+  question.textContent = q.q;
+  feedback.classList.add('hidden');
+  answers.innerHTML = '';
+
+  q.a.forEach((answer, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'answer-btn';
+    btn.textContent = answer;
+    btn.addEventListener('click', () => {
+      if (btn.disabled) return;
+      const isCorrect = i === q.c;
+      answers.querySelectorAll('.answer-btn').forEach(b => b.disabled = true);
+      btn.classList.add(isCorrect ? 'correct' : 'wrong');
+      if (!isCorrect) {
+        answers.querySelectorAll('.answer-btn')[q.c].classList.add('correct');
+      }
+      feedback.classList.remove('hidden');
+      feedback.className = 'reload-feedback ' + (isCorrect ? 'success' : 'fail');
+      feedback.textContent = isCorrect ? '✅ נכון!' : '❌ ' + q.a[q.c];
+      setTimeout(() => {
+        if (window._reloadOnAnswer) window._reloadOnAnswer(isCorrect);
+      }, 600);
+    });
+    answers.appendChild(btn);
+  });
+}
+
+export function hideReloadOverlay() {
+  document.getElementById('reload-overlay').classList.add('hidden');
+}
+
 export function showNotification(msg) {
   const el = document.getElementById('notification');
   el.textContent = msg;
